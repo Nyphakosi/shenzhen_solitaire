@@ -1,1 +1,1 @@
-a little project implementing shenzhen solitaire in rust with terminal input
+a little project implementing shenzhen solitaire in rust with a terminal interface
