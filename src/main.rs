@@ -1,0 +1,359 @@
+use core::fmt;
+use std::{io, thread, time};
+use rand::*;
+use inline_colorization::*;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Suit {
+    Red,
+    Green,
+    Black,
+    Rose,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Card {
+    suit: Suit,
+    value: i8,
+}
+
+impl Card {
+    fn new(suit: Suit, value: i8) -> Self {
+        return Card{suit, value}
+    }
+    fn stackable(lower: &Card, upper: &Card) -> bool {
+        return (lower.suit != upper.suit) && (lower.value == (upper.value+1))
+    }
+    fn validstack(stack: &Vec<Card>) -> bool {
+        if stack.len() <= 1 {return true};
+        if stack.len() == 2 {return Card::stackable(&stack[0], &stack[1])}
+        for i in 0..stack.len()-1 {
+            if !Card::stackable(&stack[i], &stack[i+1]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    fn is_dragon(&self) -> bool {
+        return self.value == -1
+    }
+    fn is_rose(&self) -> bool {
+        return self.suit == Suit::Rose
+    }
+}
+
+impl fmt::Display for Card {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut s: String = String::new();
+        match self.suit {
+            Suit::Red => {s.push_str(color_red); s.push('R')},
+            Suit::Green => {s.push_str(color_green); s.push('G')},
+            Suit::Black => {s.push_str(color_black); s.push('B')},
+            Suit::Rose => {s.push_str(color_bright_magenta); s.push_str("Z")},
+        }
+        if self.value < 0 {
+            s.push_str(color_reset);
+            s.push('D');
+        }
+        if self.value > 0 {
+            s.push_str(&self.value.to_string());
+        }
+        s.push_str(color_reset);
+        write!(f, "{}", s);
+        Ok(())
+    }
+}
+
+fn cardstack_tostring(stack: &Vec<Card>) -> String{
+    if stack.is_empty() {return "[]".to_string()}
+    let mut s: String = String::new();
+    s.push('[');
+    for card in stack {
+        s.push_str(&format!("{}", card));
+        s.push_str(", ");
+    }
+    s.pop(); s.pop();
+    s.push(']');
+    return s
+}
+
+fn print_help() {
+    println!("How To Play:");
+    println!("input a number to select a spot on the board");
+    println!("if your hand is empty, you will grab from there");
+    println!("else, you will attempt to place to there");
+    println!();
+    println!("Usual solitaire rules apply");
+    println!("No stacking on same color/suit, only in descending order");
+    println!("if 4 dragons of the same color are at the tops of stacks at the same time, ");
+    println!("you can sacrifice a hold slot to store them away");
+    println!("the rose card gets its own slot");
+    println!("sort all the cards to completed stacks to win");
+    println!();
+}
+
+fn main() {
+
+    let mut rng = rand::rng();
+
+    let mut recentgrab: usize = 0;
+    let mut grabbed: Vec<Card> = Vec::new();
+    let mut board: Vec<Vec<Card>> = Vec::new();
+    for _ in 0..15 {
+        board.push(Vec::new());
+    }
+
+    {
+        let mut ordered: Vec<Card> = Vec::new();                   // create an ordered deck
+        for s in vec![Suit::Red, Suit::Green, Suit::Black] { // for each of the 3 suits
+            for v in 1..=9 {                                   // and values 1-9
+                ordered.push(Card::new(s.clone(), v)); // put them in the ordered stack
+            }
+            for _ in 0..4 {                                        // and do the same for the 4 dragons as well
+                ordered.push(Card::new(s.clone(), -1));
+            }
+        }
+        ordered.push(Card::new(Suit::Rose, -1));            // and finally the rose card
+
+        let mut shuffled: Vec<Card> = Vec::new();                 
+        for _ in 0..40 {                                          // create a shuffled deck by randomly removing then pushing
+            let temp: Card = ordered.remove(rng.random_range(0..ordered.len()));
+            shuffled.push(temp);
+        }
+        // println!("{}", cardstack_tostring(&shuffled));
+        // distribute the cards across the board
+        for i in 0..8 {
+            println!("{}", cardstack_tostring(&board[i]));
+        }
+        println!();
+        for _ in 0..5 {    // 5 cards per stack
+            for width in 0..8 { // 8 stacks on the board
+                board[width].push(shuffled.pop().unwrap());
+                for i in 0..8 {
+                    println!("{}", cardstack_tostring(&board[i])); // play a neat little animation for filling the board!
+                }
+                println!();
+                thread::sleep(time::Duration::from_millis(50));
+            }
+        }
+
+        for _ in 0..24 {println!()}
+    }
+
+    print_help();
+
+    // main game loop
+    loop {
+        // print gamestate
+        println!("Recently Grabbed:");
+        println!("{}", recentgrab);
+        println!("Currently Grabbed:");
+        println!("{}", cardstack_tostring(&grabbed));
+        println!("Board State:");
+        for i in 0..8 {
+            println!(" {}: {}", i, cardstack_tostring(&board[i]));
+        }
+        println!(" 8: hold1: {}", cardstack_tostring(&board[8]));
+        println!(" 9: hold2: {}", cardstack_tostring(&board[9]));
+        println!("10: hold3: {}", cardstack_tostring(&board[10]));
+
+        println!("Completed Stacks:");
+        println!("11:   Red Cards: {}", cardstack_tostring(&board[11]));
+        println!("12: Green Cards: {}", cardstack_tostring(&board[12]));
+        println!("13: Black Cards: {}", cardstack_tostring(&board[13]));
+        println!("14:   Rose Card: {}", cardstack_tostring(&board[14]));
+
+        println!("Other Moves:");
+        println!("15: Stow Red Dragons");
+        println!("16: Stow Green Dragons");
+        println!("17: Stow Black Dragons");
+        println!("18: See Rules");
+        println!("19: Quit");
+
+        println!("Make a move:");
+
+        let mut successful: bool = false;
+        // get player move
+        let select: usize = input() as usize;
+        if grabbed.is_empty() {
+            match select {
+                0..=7 => { // grab from board
+                    if !board[select].is_empty() {
+                        print!("[");
+                        for i in 0..board[select].len()-1 {
+                            if i < 10 {
+                                print!(" ");
+                            }
+                            print!("{}, ", i);
+                        }
+                        if board[select].len()-1 < 10 {
+                            print!(" ");
+                        }
+                        print!("{}", board[select].len()-1);
+                        println!("]");
+                    }
+                    println!("{}", cardstack_tostring(&board[select]));
+                    println!("Select index to grab from:");
+                    let index: usize = input() as usize;
+                    if index < board[select].len() {
+                        let sublist: Vec<Card> = board[select].clone()[index..board[select].len()].to_vec();
+                        if Card::validstack(&sublist) {
+                            for c in sublist {
+                                grabbed.push(c);
+                                board[select].pop();
+                            }
+                            recentgrab = select;
+                            successful = true;
+                        }
+                    }
+                },
+                8..=10 => { // grab from hold
+                    if board[select].len() == 1 {
+                        grabbed.push(board[select].pop().unwrap());
+                        recentgrab = select;
+                        successful = true;
+                    }
+                },
+                11..=13 => { // grabb one card from completed stack
+                    if !board[select].is_empty() {
+                        grabbed.push(board[select].pop().unwrap());
+                        recentgrab = select;
+                        successful = true;
+                    }
+                },
+                _ => (), // do nothing if no matches
+            }
+        } else {
+            match select {
+                0..=7 => { // place to board
+                    let mut flag: bool = board[select].is_empty();
+                    if select == recentgrab {flag = true}
+                    if !flag {
+                        flag = Card::stackable(&board[select].last().unwrap(), &grabbed[0]);
+                    }
+                    if flag {
+                        while !grabbed.is_empty() {
+                            board[select].push(grabbed.remove(0));
+                        }
+                        successful = true;
+                    }
+                },
+                8..=10 => { // place to hold
+                    if board[select].is_empty() && grabbed.len() == 1 {
+                        board[select].push(grabbed.pop().unwrap());
+                        successful = true;
+                    }
+                },
+                11..=13 => { // placing one card to completed stack
+                    let suit: Suit = match select {
+                        11 => Suit::Red,
+                        12 => Suit::Green,
+                        13 => Suit::Black,
+                        _ => Suit::Rose,
+                    };
+                    if grabbed.len() == 1 && grabbed[0].suit == suit {
+                        if board[select].is_empty() && grabbed[0].value == 1 {
+                            board[select].push(grabbed.pop().unwrap());
+                            successful = true;
+                        } else if board[select].last().unwrap().value+1 == grabbed[0].value {
+                            board[select].push(grabbed.pop().unwrap());
+                            successful = true;
+                        }
+                    }
+                },
+                14 => { // stow rose card
+                if grabbed[0].suit == Suit::Rose {
+                    board[select].push(grabbed.pop().unwrap());
+                    successful = true;
+                }
+            },
+                _ => (), // do nothing if no matches
+            }
+        }
+        
+        match select {
+            15..=17 => { // stow dragons 
+                let suit: Suit = match select {
+                    15 => Suit::Red,
+                    16 => Suit::Green,
+                    17 => Suit::Black,
+                    _ => Suit::Rose,
+                };
+                let mut slot: usize = 0;
+                for i in 8..=10 { // find a valid storage slot
+                    if board[i].is_empty() {slot = i; break}
+                    if board[i][0].suit == suit && board[i][0].is_dragon() {slot = i; break}
+                }
+                if slot != 0 {
+                    let mut count: u8 = 0;
+                    for i in 0..=10 {
+                        if !board[i].is_empty() {
+                            let c: &Card = board[i].last().unwrap();
+                            if c.suit == suit && c.is_dragon() {
+                                count += 1;
+                            }
+                        }
+                    }
+                    if count == 4 {
+                        for i in 0..=10 {
+                            if !board[i].is_empty() {
+                                if board[i].last().unwrap().suit == suit && board[i].last().unwrap().is_dragon() {
+                                    let temp: Card = board[i].pop().unwrap();
+                                    board[slot].push(temp);
+                                }
+                            }
+                        }
+                        successful = true;
+                    }
+                }
+            },
+            18 => {print_help(); successful = true},
+            19 => return,
+            _ => (),
+        }
+
+        if !successful {
+            println!("Invalid Move.");
+        }
+
+        { // win check
+            let mut flag: bool = true;
+            let mut slot: usize = 11;
+            for s in vec![Suit::Red, Suit::Green, Suit::Black] {
+                if board[slot].len() < 9 {
+                    flag = false;
+                    break;
+                }
+                for c in 1..=9 {
+                    if board[slot][c].value != c as i8 {
+                        flag = false;
+                        break;
+                    }
+                }
+                slot += 1;
+            }
+            if flag {
+                println!("You Win!");
+            }
+        }
+
+        for _ in 0..5 {println!()}
+    }
+}
+
+
+
+fn input() -> u8 {
+    loop {
+        let mut value = String::new();
+
+        io::stdin()
+            .read_line(&mut value)
+            .expect("Failed to read line");
+
+        match value.trim().parse() {
+            Ok(num) => return num,
+            Err(_) => continue,
+        };
+    }
+}
