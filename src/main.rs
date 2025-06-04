@@ -103,8 +103,7 @@ fn main() {
         board.push(Vec::new());
     }
 
-    // fill random game
-    {
+    { // fill random game
         let mut ordered: Vec<Card> = Vec::new();                   // create an ordered deck
         for s in vec![Suit::Red, Suit::Green, Suit::Black] { // for each of the 3 suits
             for v in 1..=9 {                                   // and values 1-9
@@ -141,8 +140,7 @@ fn main() {
         for _ in 0..24 {println!()}
     }
 
-    // fill almost completed game
-    // {
+    // { // fill almost completed game
     //     let mut slot: usize = 8;
     //     for s in vec![Suit::Red, Suit::Green, Suit::Black] {
     //         for _ in 0..4 {
@@ -162,12 +160,84 @@ fn main() {
     //     board[0].push(temp);
     // }
 
+    // { // fill known solveable game
+    //     board[0].push(Card::new(Suit::Red, -1)); board[0].push(Card::new(Suit::Green, 4)); board[0].push(Card::new(Suit::Black, 5)); board[0].push(Card::new(Suit::Red, 7)); board[0].push(Card::new(Suit::Black, 6));
+    //     board[1].push(Card::new(Suit::Black, -1));
+    //     board[2].push(Card::new(Suit::Red, 2)); board[2].push(Card::new(Suit::Black, 9)); board[2].push(Card::new(Suit::Green, 3)); board[2].push(Card::new(Suit::Red, -1));
+    //     board[3].push(Card::new(Suit::Red, 8));
+    //     board[4].push(Card::new(Suit::Red, 9)); board[4].push(Card::new(Suit::Black, 8)); board[4].push(Card::new(Suit::Green, 7)); board[4].push(Card::new(Suit::Red, 6)); board[4].push(Card::new(Suit::Green, 5)); board[4].push(Card::new(Suit::Black, 4)); board[4].push(Card::new(Suit::Red, 3));
+    //     board[5].push(Card::new(Suit::Red, -1)); board[5].push(Card::new(Suit::Green, 8)); board[5].push(Card::new(Suit::Black, -1));
+    //     board[6].push(Card::new(Suit::Green, 9)); board[6].push(Card::new(Suit::Red, -1)); board[6].push(Card::new(Suit::Green, 2)); board[6].push(Card::new(Suit::Red, 5)); board[6].push(Card::new(Suit::Black, 7)); board[6].push(Card::new(Suit::Green, 6));
+    //     board[7].push(Card::new(Suit::Black, -1)); board[7].push(Card::new(Suit::Red, 4));
+    //     for _ in 0..4 {
+    //         board[8].push(Card::new(Suit::Green, -1));
+    //     }
+    //     board[9].push(Card::new(Suit::Black, -1));
+    //     board[11].push(Card::new(Suit::Red, 1));
+    //     board[12].push(Card::new(Suit::Green, 1));
+    //     for i in 1..=3 {
+    //         board[13].push(Card::new(Suit::Black, i));
+    //     }
+    //     board[14].push(Card::new(Suit::Rose, -1));
+    // }
+
+    /*
+    Board State:
+    0: []
+    1: [R4, G3]
+    2: [R2, B9]
+    3: [R8, G7, R6, G5, B4, R3]
+    4: [R9, B8, R7, B6, R5, G4]
+    5: []
+    6: [G9]
+    7: [G8, B7, G6, B5]
+    8: hold1: [GD, GD, GD, GD]
+    9: hold2: [BD, BD, BD, BD]
+    10: hold3: [RD, RD, RD, RD]
+    Final Stacks:
+    11:   Red Cards: [R1]
+    12: Green Cards: [G1, G2]
+    13: Black Cards: [B1, B2, B3]
+    14:   Rose Card: [ZD]
+     */
+
+    // { // progressed above state, 1 move away from win
+    //     board[1].push(Card::new(Suit::Red, 4)); board[1].push(Card::new(Suit::Green, 3));
+    //     board[2].push(Card::new(Suit::Red, 2)); board[2].push(Card::new(Suit::Black, 9));
+    //     let mut val: i8 = 8;
+    //     for suit in vec![Suit::Red, Suit::Green, Suit::Red, Suit::Green, Suit::Black, Suit::Red] {
+    //         board[3].push(Card::new(suit, val));
+    //         val -= 1;
+    //     }
+    //     let mut val: i8 = 9;
+    //     for suit in vec![Suit::Red, Suit::Black, Suit::Red, Suit::Black, Suit::Red, Suit::Green] {
+    //         board[4].push(Card::new(suit, val));
+    //         val -= 1;
+    //     }
+    //     board[6].push(Card::new(Suit::Green, 9));
+    //     let mut val: i8 = 8;
+    //     for suit in vec![Suit::Green, Suit::Black, Suit::Green, Suit::Black] {
+    //         board[7].push(Card::new(suit, val));
+    //         val -= 1;
+    //     }
+    //     let mut slot: usize = 8;
+    //     for suit in vec![Suit::Green, Suit::Black, Suit::Red] {
+    //         for _ in 0..4 {
+    //             board[slot].push(Card::new(suit, -1));
+    //         }
+    //         slot += 1;
+    //     }
+    //     board[11].push(Card::new(Suit::Red, 1));
+    //     board[12].push(Card::new(Suit::Green, 1)); board[12].push(Card::new(Suit::Green, 2));
+    //     board[13].push(Card::new(Suit::Black, 1)); board[13].push(Card::new(Suit::Black, 2)); board[13].push(Card::new(Suit::Black, 3)); 
+    //     board[14].push(Card::new(Suit::Rose, -1));
+    // }
+
     print_help();
 
     // main game loop
     loop {
-        let mut flag: bool = true;
-        while flag {
+        'stackloop: loop {
             // print gamestate
             println!("Recently Grabbed:");
             println!("{}", recentgrab);
@@ -187,7 +257,6 @@ fn main() {
             println!("13: Black Cards: {}", cardstack_tostring(&board[13]));
             println!("14:   Rose Card: {}", cardstack_tostring(&board[14]));
             { // autostack, reprint gamestate if happens
-                let mut innerflag: bool = false;
                 if grabbed.is_empty() {
                     let level: i8 = min(board[11].len(), min(board[12].len(), board[13].len())) as i8 + 1;
                     for i in 0..=10 {
@@ -202,15 +271,15 @@ fn main() {
                                 };
                                 let c: Card = board[i].pop().unwrap();
                                 board[slot].push(c);
-                                innerflag = true;
                                 println!("Autostacked: {}", c);
                                 println!();
-                                break;
+                                thread::sleep(time::Duration::from_millis(50));
+                                continue 'stackloop;
                             }
                         }
                     }
                 }
-                flag = innerflag;
+                break 'stackloop;
             }
         }
 
