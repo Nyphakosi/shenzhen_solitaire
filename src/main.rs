@@ -294,7 +294,7 @@ fn main() {
                 }
             }
             if flag {
-                println!("You Win!");
+                println!("{}You Win!{}", color_bright_magenta, color_reset);
                 return;
             }
         }
