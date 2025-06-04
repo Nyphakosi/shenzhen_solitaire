@@ -1,5 +1,5 @@
 use core::fmt;
-use std::{io, thread, time};
+use std::{cmp::min, io, thread, time};
 use rand::*;
 use inline_colorization::*;
 
@@ -59,7 +59,7 @@ impl fmt::Display for Card {
             s.push_str(&self.value.to_string());
         }
         s.push_str(color_reset);
-        write!(f, "{}", s);
+        write!(f, "{}", s).unwrap();
         Ok(())
     }
 }
@@ -88,7 +88,7 @@ fn print_help() {
     println!("if 4 dragons of the same color are at the tops of stacks at the same time, ");
     println!("you can sacrifice a hold slot to store them away");
     println!("the rose card gets its own slot");
-    println!("sort all the cards to completed stacks to win");
+    println!("empty all 8 board slots to win");
     println!();
 }
 
@@ -103,6 +103,7 @@ fn main() {
         board.push(Vec::new());
     }
 
+    // fill random game
     {
         let mut ordered: Vec<Card> = Vec::new();                   // create an ordered deck
         for s in vec![Suit::Red, Suit::Green, Suit::Black] { // for each of the 3 suits
@@ -140,28 +141,94 @@ fn main() {
         for _ in 0..24 {println!()}
     }
 
+    // fill almost completed game
+    // {
+    //     let mut slot: usize = 8;
+    //     for s in vec![Suit::Red, Suit::Green, Suit::Black] {
+    //         for _ in 0..4 {
+    //             board[slot].push(Card::new(s, -1));
+    //         }
+    //         slot += 1;
+    //     }
+    //     for s in vec![Suit::Red, Suit::Green, Suit::Black] {
+    //         for i in 1..=9 {
+    //             board[slot].push(Card::new(s, i))
+    //         }
+    //         slot += 1;
+    //     }
+    //     board[14].push(Card::new(Suit::Rose, -1));
+
+    //     let temp = board[11].pop().unwrap();
+    //     board[0].push(temp);
+    // }
+
     print_help();
 
     // main game loop
     loop {
-        // print gamestate
-        println!("Recently Grabbed:");
-        println!("{}", recentgrab);
-        println!("Currently Grabbed:");
-        println!("{}", cardstack_tostring(&grabbed));
-        println!("Board State:");
-        for i in 0..8 {
-            println!(" {}: {}", i, cardstack_tostring(&board[i]));
-        }
-        println!(" 8: hold1: {}", cardstack_tostring(&board[8]));
-        println!(" 9: hold2: {}", cardstack_tostring(&board[9]));
-        println!("10: hold3: {}", cardstack_tostring(&board[10]));
+        let mut flag: bool = true;
+        while flag {
+            // print gamestate
+            println!("Recently Grabbed:");
+            println!("{}", recentgrab);
+            println!("Currently Grabbed:");
+            println!("{}", cardstack_tostring(&grabbed));
+            println!("Board State:");
+            for i in 0..8 {
+                println!(" {}: {}", i, cardstack_tostring(&board[i]));
+            }
+            println!(" 8: hold1: {}", cardstack_tostring(&board[8]));
+            println!(" 9: hold2: {}", cardstack_tostring(&board[9]));
+            println!("10: hold3: {}", cardstack_tostring(&board[10]));
 
-        println!("Completed Stacks:");
-        println!("11:   Red Cards: {}", cardstack_tostring(&board[11]));
-        println!("12: Green Cards: {}", cardstack_tostring(&board[12]));
-        println!("13: Black Cards: {}", cardstack_tostring(&board[13]));
-        println!("14:   Rose Card: {}", cardstack_tostring(&board[14]));
+            println!("Final Stacks:");
+            println!("11:   Red Cards: {}", cardstack_tostring(&board[11]));
+            println!("12: Green Cards: {}", cardstack_tostring(&board[12]));
+            println!("13: Black Cards: {}", cardstack_tostring(&board[13]));
+            println!("14:   Rose Card: {}", cardstack_tostring(&board[14]));
+            { // autostack, reprint gamestate if happens
+                let mut innerflag: bool = false;
+                if grabbed.is_empty() {
+                    let level: i8 = min(board[11].len(), min(board[12].len(), board[13].len())) as i8 + 1;
+                    for i in 0..=10 {
+                        if !board[i].is_empty() {
+                            let c: &Card = board[i].last().unwrap();
+                            if c.value == level || c.suit == Suit::Rose {
+                                let slot: usize = match c.suit {
+                                    Suit::Red => 11,
+                                    Suit::Green => 12,
+                                    Suit::Black => 13,
+                                    Suit::Rose => 14,
+                                };
+                                let c: Card = board[i].pop().unwrap();
+                                board[slot].push(c);
+                                innerflag = true;
+                                println!("Autostacked: {}", c);
+                                println!();
+                                break;
+                            }
+                        }
+                    }
+                }
+                flag = innerflag;
+            }
+        }
+
+        { // win check
+            let mut flag: bool = true;
+            if !grabbed.is_empty() {
+                    flag = false;
+                }
+            for slot in 0..=7 {
+                if !board[slot].is_empty() {
+                    flag = false;
+                }
+            }
+            if flag {
+                println!("You Win!");
+                return;
+            }
+        }
 
         println!("Other Moves:");
         println!("15: Stow Red Dragons");
@@ -214,7 +281,7 @@ fn main() {
                         successful = true;
                     }
                 },
-                11..=13 => { // grabb one card from completed stack
+                11..=13 => { // grabb one card from Final stack
                     if !board[select].is_empty() {
                         grabbed.push(board[select].pop().unwrap());
                         recentgrab = select;
@@ -244,7 +311,7 @@ fn main() {
                         successful = true;
                     }
                 },
-                11..=13 => { // placing one card to completed stack
+                11..=13 => { // placing one card to Final stack
                     let suit: Suit = match select {
                         11 => Suit::Red,
                         12 => Suit::Green,
@@ -262,7 +329,7 @@ fn main() {
                     }
                 },
                 14 => { // stow rose card
-                if grabbed[0].suit == Suit::Rose {
+                if grabbed[0].is_rose() {
                     board[select].push(grabbed.pop().unwrap());
                     successful = true;
                 }
@@ -314,27 +381,6 @@ fn main() {
 
         if !successful {
             println!("Invalid Move.");
-        }
-
-        { // win check
-            let mut flag: bool = true;
-            let mut slot: usize = 11;
-            for s in vec![Suit::Red, Suit::Green, Suit::Black] {
-                if board[slot].len() < 9 {
-                    flag = false;
-                    break;
-                }
-                for c in 1..=9 {
-                    if board[slot][c].value != c as i8 {
-                        flag = false;
-                        break;
-                    }
-                }
-                slot += 1;
-            }
-            if flag {
-                println!("You Win!");
-            }
         }
 
         for _ in 0..5 {println!()}
