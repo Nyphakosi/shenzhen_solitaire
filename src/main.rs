@@ -1,6 +1,6 @@
 use core::fmt;
 use std::{cmp::min, io, thread, time};
-use rand::*;
+use rand::{rngs::StdRng, Rng, RngCore, SeedableRng};
 use inline_colorization::*;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -94,7 +94,13 @@ fn print_help() {
 
 fn main() {
 
-    let mut rng = rand::rng();
+    println!("Input Seed Value (0 for random):");
+    let mut seed: u64 = inputu64();
+    if seed == 0 {
+        seed = rand::rng().next_u64();
+    }
+    let seed: u64 = seed; // remove mutability
+    let mut rng: StdRng = SeedableRng::seed_from_u64(seed);
 
     let mut recentgrab: usize = 0;
     let mut grabbed: Vec<Card> = Vec::new();
@@ -233,6 +239,8 @@ fn main() {
     //     board[14].push(Card::new(Suit::Rose, -1));
     // }
 
+    println!("Game Seed: {}", seed);
+    println!();
     print_help();
 
     // main game loop
@@ -459,6 +467,21 @@ fn main() {
 
 
 fn input() -> u8 {
+    loop {
+        let mut value = String::new();
+
+        io::stdin()
+            .read_line(&mut value)
+            .expect("Failed to read line");
+
+        match value.trim().parse() {
+            Ok(num) => return num,
+            Err(_) => continue,
+        };
+    }
+}
+
+fn inputu64() -> u64 {
     loop {
         let mut value = String::new();
 
