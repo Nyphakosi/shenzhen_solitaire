@@ -79,16 +79,19 @@ fn cardstack_tostring(stack: &Vec<Card>) -> String{
 
 fn print_help() {
     println!("How To Play:");
-    println!("input a number to select a spot on the board");
-    println!("if your hand is empty, you will grab from there");
-    println!("else, you will attempt to place to there");
+    println!("Input a number to select a spot on the board.");
+    println!("If your hand is empty, you can grab one or more cards.");
+    println!("If not, you will attempt to place your held card(s).");
     println!();
-    println!("Usual solitaire rules apply");
-    println!("No stacking on same color/suit, only in descending order");
-    println!("if 4 dragons of the same color are at the tops of stacks at the same time, ");
-    println!("you can sacrifice a hold slot to store them away");
-    println!("the rose card gets its own slot");
-    println!("empty all 8 board slots to win");
+    println!("Standard solitaire rules apply.");
+    println!("No stacking on same color/suit, only stacking in descending order.");
+    println!("If 4 dragons of the same color are at the tops of stacks at the same time, ");
+    println!("you can sacrifice a hold slot to store them away.");
+    println!();
+    println!("The game will attempt to automatically stack cards when possible.");
+    println!("The rose card gets its own slot, ");
+    println!("and will immediately be autostacked when revealed.");
+    println!("Empty all 8 board stacks to win.");
     println!();
 }
 
