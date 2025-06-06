@@ -94,14 +94,19 @@ fn print_help() {
 
 fn main() {
 
+    'newgame: loop { // can you tell i program in assembly?
+
     println!("Input Seed Value (0 for random):");
     let mut seed: u64 = inputu64();
     if seed == 0 {
         seed = rand::rng().next_u64();
     }
     let seed: u64 = seed; // remove mutability
-    let mut rng: StdRng = SeedableRng::seed_from_u64(seed);
 
+    'restartgame: loop {
+
+    let mut rng: StdRng = SeedableRng::seed_from_u64(seed);
+    
     let mut recentgrab: usize = 0;
     let mut grabbed: Vec<Card> = Vec::new();
     let mut board: Vec<Vec<Card>> = Vec::new();
@@ -311,8 +316,7 @@ fn main() {
         println!("15: Stow Red Dragons");
         println!("16: Stow Green Dragons");
         println!("17: Stow Black Dragons");
-        println!("18: See Rules");
-        println!("19: Quit");
+        println!("18: Menu");
 
         println!("Make a move:");
 
@@ -451,8 +455,22 @@ fn main() {
                     }
                 }
             },
-            18 => {print_help(); successful = true},
-            19 => return,
+            18 => {
+                successful = true;
+                println!("0: Exit Menu");
+                println!("1: Show Rules");
+                println!("2: Restart Game");
+                println!("3: New Game");
+                println!("4: Quit Game");
+                let menuselect: u8 = input();
+                match menuselect {
+                    1 => print_help(),
+                    2 => continue 'restartgame,
+                    3 => continue 'newgame,
+                    4 => return,
+                    _ => (),
+                }
+            }
             _ => (),
         }
 
@@ -461,6 +479,9 @@ fn main() {
         }
 
         for _ in 0..5 {println!()}
+    }
+
+    }
     }
 }
 
