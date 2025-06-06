@@ -265,10 +265,10 @@ fn main() {
             println!("10: hold3: {}", cardstack_tostring(&board[10]));
 
             println!("Final Stacks:");
-            println!("11:   Red Cards: {}", cardstack_tostring(&board[11]));
-            println!("12: Green Cards: {}", cardstack_tostring(&board[12]));
-            println!("13: Black Cards: {}", cardstack_tostring(&board[13]));
-            println!("14:   Rose Card: {}", cardstack_tostring(&board[14]));
+            println!("11:   Red: {}", cardstack_tostring(&board[11]));
+            println!("12: Green: {}", cardstack_tostring(&board[12]));
+            println!("13: Black: {}", cardstack_tostring(&board[13]));
+            println!("14:  Rose: {}", cardstack_tostring(&board[14]));
             { // autostack, reprint gamestate if happens
                 if grabbed.is_empty() {
                     let level: i8 = min(board[11].len(), min(board[12].len(), board[13].len())) as i8 + 1;
