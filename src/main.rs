@@ -48,7 +48,7 @@ impl fmt::Display for Card {
         match self.suit {
             Suit::Red => {s.push_str(color_red); s.push('R')},
             Suit::Green => {s.push_str(color_green); s.push('G')},
-            Suit::Black => {s.push_str(color_black); s.push('B')},
+            Suit::Black => {s.push_str(color_bright_black); s.push('B')},
             Suit::Rose => {s.push_str(color_bright_magenta); s.push_str("Z")},
         }
         if self.value < 0 {
